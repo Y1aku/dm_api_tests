@@ -11,7 +11,7 @@ def test_post_v1_account():
     mailhog_api = MailhogApi(host="http://5.63.153.31:5025")
 
     # Регистрация нового пользователя
-    login = "arbuzz28"
+    login = "arbuzz29"
     email = f"{login}@mail.ru"
     password = '123456789'
 

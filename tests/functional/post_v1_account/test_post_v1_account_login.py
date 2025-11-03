@@ -23,14 +23,10 @@ def test_post_v1_account_login():
     }
 
     response = account_api.post_v1_account(json_data=json_data)
-    print(f"\n{response.status_code}")
-    print(response.text)
     assert response.status_code == 201, f"Пользователь не был создан {response.json()}"
 
     # Получить письма из почтового ящика
     response = mailhog_api.get_api_v2_messages()
-    print(response.status_code)
-    print(response.text)
     assert response.status_code == 200, f"Письма не были получены"
 
     # Получить авторизационный токен
@@ -39,8 +35,6 @@ def test_post_v1_account_login():
 
     # Активация зарегистрированного пользователя
     response = account_api.put_v1_account_token(token=token)
-    print(response.status_code)
-    print(response.text)
     assert response.status_code == 200, "Пользователь не активирован"
 
     # Авторизация пользователя
@@ -51,8 +45,6 @@ def test_post_v1_account_login():
     }
 
     response = login_api.post_v1_account_login(json_data=json_data)
-    print(response.status_code)
-    print(response.text)
     assert response.status_code == 200, "Пользователь не смог авторизоваться"
 
 def get_activation_token_by_login(login, response):

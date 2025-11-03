@@ -22,6 +22,4 @@ def test_post_v1_account():
     }
 
     response = account_api.post_v1_account(json_data=json_data)
-    print(f"\n{response.status_code}")
-    print(response.text)
     assert response.status_code == 201, f"Пользователь не был создан {response.json()}"

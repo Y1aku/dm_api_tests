@@ -12,7 +12,7 @@ class AccountHelper:
         json_data = {
             'login': login,
             'email': email,
-            'password': password,
+            'password': password
         }
 
         # Регистрация нового пользователя
@@ -33,16 +33,51 @@ class AccountHelper:
 
         return response
 
-    def user_login(self, login: str, password: str, remember_me: bool = True):
-        # Авторизация пользователя
+    def user_login(self, login: str, password: str, expected_code: int, remember_me: bool = True):
         json_data = {
             'login': login,
             'password': password,
             'rememberMe': remember_me
         }
 
+        status_messages = {
+            200: "Пользователь не смог авторизоваться",
+            403: "Ожидалась ошибка авторизации"
+        }
+
+        # Авторизация пользователя
         response = self.dm_account_api.login_api.post_v1_account_login(json_data=json_data)
-        assert response.status_code == 200, "Пользователь не смог авторизоваться"
+        message = status_messages.get(expected_code)
+        assert response.status_code == expected_code, message
+
+        return response
+
+    def change_user_email(self, login: str, password: str, email: str):
+        json_data = {
+            'login': login,
+            'password': password,
+            'email': email
+        }
+
+        # Меняем email
+        response = self.dm_account_api.account_api.put_v1_account_change_email(json_data=json_data)
+        assert response.status_code == 200, "Пользователь не смог поменять email"
+
+        return response
+
+    def activate_user_changed_token(self, email: str):
+
+        # Получить письма из почтового ящика
+        response = self.mailhog.mailhog_api.get_api_v2_messages()
+        assert response.status_code == 200, f"Письма не были получены"
+
+        # Получить токен подтверждения смены почты
+        token = self.get_change_email_token_by_email(email, response)
+        assert token is not None, f"Токен для подтверждения смены почты {email} не был получен"
+
+        # Активировать пользователя сменившего почту
+        response = self.dm_account_api.account_api.put_v1_account_token(token=token)
+        assert response.status_code == 200, "Пользователь не активирован"
 
         return response
 
@@ -53,5 +88,15 @@ class AccountHelper:
             user_data = loads(item['Content']['Body'])
             user_login = user_data['Login']
             if user_login == login:
+                token = user_data['ConfirmationLinkUrl'].split('/')[-1]
+        return token
+
+    @staticmethod
+    def get_change_email_token_by_email(email, response):
+        token = None
+        for item in response.json()['items']:
+            user_data = loads(item['Content']['Body'])
+            user_email = item['Content']['Headers']['To'][0]
+            if user_email == email:
                 token = user_data['ConfirmationLinkUrl'].split('/')[-1]
         return token

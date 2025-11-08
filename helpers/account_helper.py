@@ -19,17 +19,11 @@ class AccountHelper:
         response = self.dm_account_api.account_api.post_v1_account(json_data=json_data)
         assert response.status_code == 201, f"Пользователь не был создан {response.json()}"
 
-        # Получить письма из почтового ящика
-        response = self.mailhog.mailhog_api.get_api_v2_messages()
-        assert response.status_code == 200, f"Письма не были получены"
-
-        # Получить авторизационный токен
-        token = self.get_activation_token_by_login(login=login, response=response)
-        assert token is not None, f"Токен для пользователя {login} не был получен"
+        # Получить активационный токен
+        token = self.get_activation_token_by_login(login=login)
 
         # Активация зарегистрированного пользователя
-        response = self.dm_account_api.account_api.put_v1_account_token(token=token)
-        assert response.status_code == 200, "Пользователь не активирован"
+        response = self.activate_token(token=token)
 
         return response
 
@@ -65,38 +59,30 @@ class AccountHelper:
 
         return response
 
-    def activate_user_changed_token(self, email: str):
+    def activate_changing_mail_token(self, login: str):
+        token = self.get_activation_token_by_login(login=login)
+        return self.activate_token(token=token)
 
-        # Получить письма из почтового ящика
-        response = self.mailhog.mailhog_api.get_api_v2_messages()
-        assert response.status_code == 200, f"Письма не были получены"
+    def activate_token(self, token: str):
 
-        # Получить токен подтверждения смены почты
-        token = self.get_change_email_token_by_email(email, response)
-        assert token is not None, f"Токен для подтверждения смены почты {email} не был получен"
-
-        # Активировать пользователя сменившего почту
+        # Активировать токен
         response = self.dm_account_api.account_api.put_v1_account_token(token=token)
         assert response.status_code == 200, "Пользователь не активирован"
 
         return response
 
-    @staticmethod
-    def get_activation_token_by_login(login, response):
+    def get_activation_token_by_login(self, login: str):
+
+        # Получить письма из почтового ящика
+        response = self.mailhog.mailhog_api.get_api_v2_messages()
+        assert response.status_code == 200, f"Письма не были получены"
+
         token = None
         for item in response.json()['items']:
             user_data = loads(item['Content']['Body'])
             user_login = user_data['Login']
             if user_login == login:
                 token = user_data['ConfirmationLinkUrl'].split('/')[-1]
-        return token
+        assert token is not None, f"Токен для пользователя {login} не был получен"
 
-    @staticmethod
-    def get_change_email_token_by_email(email, response):
-        token = None
-        for item in response.json()['items']:
-            user_data = loads(item['Content']['Body'])
-            user_email = item['Content']['Headers']['To'][0]
-            if user_email == email:
-                token = user_data['ConfirmationLinkUrl'].split('/')[-1]
         return token

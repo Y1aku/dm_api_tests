@@ -37,7 +37,8 @@ def test_put_v1_account_email():
     account_helper.user_login(login=login, password=password, expected_code=403)
 
     # Активировать пользователя сменившего почту
-    account_helper.activate_changing_mail_token(login=login)
+    token = account_helper.get_activation_token_by_login(login=login)
+    account_helper.activate_token(token=token)
 
     # Авторизация пользователя
     account_helper.user_login(login=login, password=password, expected_code=200)

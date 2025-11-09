@@ -59,10 +59,6 @@ class AccountHelper:
 
         return response
 
-    def activate_changing_mail_token(self, login: str):
-        token = self.get_activation_token_by_login(login=login)
-        return self.activate_token(token=token)
-
     def activate_token(self, token: str):
 
         # Активировать токен

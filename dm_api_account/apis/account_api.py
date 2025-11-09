@@ -41,8 +41,8 @@ class AccountApi(RestClient):
             'accept': 'text/plain',
             'Content-Type': 'application/json',
         }
-        response = requests.put(
-            url=f'{self.host}/v1/account/email',
+        response = self.put(
+            path='/v1/account/email',
             headers=headers,
             json=json_data
         )
